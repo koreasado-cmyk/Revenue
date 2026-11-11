@@ -115,7 +115,7 @@
 
 <div class="wrap">
   <h1>식자재 중간점검</h1>
-  <p class="guide">오늘까지 매출과 거래처별로 쓴 돈만 넣으면, <b>색깔</b>로 바로 알려드려요.</p>
+  <p class="guide">오늘까지 매출과 거래처별로 쓴 돈만 넣으면,<br><b>색깔</b>로 바로 알려드려요.</p>
 
   <div id="nojs" style="background:#fde8e5;color:#c23b2e;border-radius:12px;padding:12px 14px;margin-bottom:12px;font-size:14px;font-weight:700">
     ⚠ 지금은 '미리보기' 화면이라 계산이 안 됩니다.<br>
@@ -126,7 +126,7 @@
   <div class="hero st-idle" id="hero">
     <div class="emo" id="hEmo">✍️</div>
     <div class="head" id="hHead">아래에 숫자를 넣어주세요</div>
-    <div id="hBody"><p>매출과 거래처 3곳에 쓴 금액을 넣으면 결과가 여기에 나옵니다.</p></div>
+    <div id="hBody"><p>매출과 거래처 3곳에 쓴 금액을 넣으면<br>결과가 여기에 나옵니다.</p></div>
     <div class="gauge" id="gauge" style="display:none">
       <div class="gtrack"><div class="gfill" id="gFill"></div><div class="gline" style="left:73.08%"></div><div class="gline" style="left:76.92%"></div></div>
       <div class="glab"><span style="left:0;transform:none">0</span><span style="left:38.46%">한도의 절반</span><span style="left:76.92%">한도 100%</span></div>
@@ -137,9 +137,9 @@
   <!-- 입력 -->
   <div class="card">
     <h2>① 숫자 입력</h2>
-    <p class="desc">만원 단위(6000), 원 단위(60000000) 둘 다 됩니다. 원 단위는 자동으로 만원으로 바꿔 계산해요.</p>
-    <div class="row"><label>오늘 날짜</label><div class="box"><input type="date" id="date"></div></div>
-    <div class="row"><label>지금까지 매출<span class="hint" id="h-sales">이번 달 1일~오늘 합계</span></label><div class="box"><input id="sales" inputmode="decimal" placeholder="예: 6000"><em>만원</em></div></div>
+    <p class="desc">만원 단위(6000), 원 단위(60000000) 둘 다 됩니다.<br>원 단위는 자동으로 만원으로 바꿔 계산해요.</p>
+    <div class="row"><label>매출 기준일<span class="hint">매출이 언제까지 집계된 값인지<br>어제 마감까지면 어제 날짜로</span></label><div class="box"><input type="date" id="date"></div></div>
+    <div class="row"><label>지금까지 매출<span class="hint" id="h-sales">이번 달 1일~기준일 합계</span></label><div class="box"><input id="sales" inputmode="decimal" placeholder="예: 6000"><em>만원</em></div></div>
     <div class="row"><label>에이엔오에 쓴 돈<span class="hint" id="h-ano"></span></label><div class="box"><input id="ano" inputmode="decimal" placeholder="0"><em>만원</em></div></div>
     <div class="row"><label>수산에 쓴 돈<span class="hint" id="h-fish"></span></label><div class="box"><input id="fish" inputmode="decimal" placeholder="0"><em>만원</em></div></div>
     <div class="row"><label>한국유통에 쓴 돈<span class="hint" id="h-kr"></span></label><div class="box"><input id="kr" inputmode="decimal" placeholder="0"><em>만원</em></div></div>
@@ -148,7 +148,7 @@
   <!-- 거래처 -->
   <div class="card">
     <h2>② 거래처별로 보면</h2>
-    <p class="desc">막대 끝 세로선이 '써도 되는 한도'입니다. 선을 넘으면 빨간색이에요.</p>
+    <p class="desc">막대 끝 세로선이 '써도 되는 한도'입니다.<br>선을 넘으면 빨간색이에요.</p>
     <div id="vendors"></div>
   </div>
 
@@ -163,7 +163,7 @@
   <div class="card">
     <details id="refBox">
       <summary>④ 매출별 '써도 되는 금액' 표 <span>펼치기 ▾</span></summary>
-      <p class="desc" style="margin-top:8px">매출이 많아질수록 쓸 수 있는 비율도 조금씩 올라가요. (합계 31.25% → 최대 33.5%)<br>노란 줄이 지금 매출 구간입니다.</p>
+      <p class="desc" style="margin-top:8px">매출이 많아질수록 쓸 수 있는 비율도 조금씩 올라가요.<br>(합계 31.25% → 최대 33.5%)<br>노란 줄이 지금 매출 구간입니다.</p>
       <table id="ref"></table>
     </details>
   </div>
@@ -221,7 +221,7 @@
   function read(id){
     const raw = String($(id).value).replace(/[,\s원만]/g,'');
     let x = parseFloat(raw);
-    const h = $('h-' + id), def = id === 'sales' ? '이번 달 1일~오늘 합계' : '';
+    const h = $('h-' + id), def = id === 'sales' ? '이번 달 1일~기준일 합계' : '';
     if (isNaN(x)) { h.innerHTML = def; return null; }
     if (x >= 100000) { x = x / 10000; h.innerHTML = `<span class="conv">원 단위 → ${won(x)}으로 계산</span>`; }
     else h.innerHTML = def;
@@ -258,7 +258,7 @@
     $('miniIn').className = 'st-' + st;
     if (!S) {
       $('hEmo').textContent = '✍️'; $('hHead').textContent = '아래에 숫자를 넣어주세요';
-      $('hBody').innerHTML = '<p>매출과 거래처 3곳에 쓴 금액을 넣으면 결과가 여기에 나옵니다.</p>';
+      $('hBody').innerHTML = '<p>매출과 거래처 3곳에 쓴 금액을 넣으면<br>결과가 여기에 나옵니다.</p>';
       $('gauge').style.display = 'none'; $('hTodo').style.display = 'none';
       $('miniIn').textContent = '숫자를 입력하세요';
     } else if (st === 'idle') {
@@ -313,7 +313,7 @@
     // ── 월말
     if (proj) {
       const pT = totalAt(proj), remain = mdays - day;
-      let li = `<li><span class="n">1</span><span>오늘은 이번 달 <b>${day}일째</b> (남은 날 ${remain}일), 하루 평균 매출 <b>${won(S/day)}</b></span></li>`;
+      let li = `<li><span class="n">1</span><span>기준일(${day}일)까지 하루 평균 매출 <b>${won(S/day)}</b>, 월말까지 남은 날 <b>${remain}일</b></span></li>`;
       li += `<li><span class="n">2</span><span>이대로면 이번 달 매출은 약 <b>${won(proj)}</b></span></li>`;
       li += `<li><span class="n">3</span><span>그러면 이번 달 식자재는 총 <b>${won(pT)}</b>까지 써도 돼요</span></li>`;
       if (U !== null) {
