@@ -136,7 +136,7 @@
     <h2>① 숫자 입력</h2>
     <p class="desc">이번 달 1일부터 오늘까지 합계를 넣으세요. 만원 단위, 원 단위 둘 다 됩니다.</p>
     <div class="row"><label>오늘 날짜</label><div class="box"><input type="date" id="date"></div></div>
-    <div class="row"><label>이번 달 매출<span class="hint" id="h-sales">예: 6000 또는 60,000,000</span></label><div class="box"><input id="sales" inputmode="decimal" placeholder="0"><em>만원</em></div></div>
+    <div class="row"><label>지금까지 매출<span class="hint" id="h-sales">이번 달 1일~오늘 · 예: 6000 또는 60,000,000</span></label><div class="box"><input id="sales" inputmode="decimal" placeholder="0"><em>만원</em></div></div>
     <div class="row"><label>에이엔오에 쓴 돈<span class="hint" id="h-ano"></span></label><div class="box"><input id="ano" inputmode="decimal" placeholder="0"><em>만원</em></div></div>
     <div class="row"><label>수산에 쓴 돈<span class="hint" id="h-fish"></span></label><div class="box"><input id="fish" inputmode="decimal" placeholder="0"><em>만원</em></div></div>
     <div class="row"><label>한국유통에 쓴 돈<span class="hint" id="h-kr"></span></label><div class="box"><input id="kr" inputmode="decimal" placeholder="0"><em>만원</em></div></div>
@@ -218,7 +218,7 @@
   function read(id){
     const raw = String($(id).value).replace(/[,\s원만]/g,'');
     let x = parseFloat(raw);
-    const h = $('h-' + id), def = id === 'sales' ? '예: 6000 또는 60,000,000' : '';
+    const h = $('h-' + id), def = id === 'sales' ? '이번 달 1일~오늘 · 예: 6000 또는 60,000,000' : '';
     if (isNaN(x)) { h.innerHTML = def; return null; }
     if (x >= 100000) { x = x / 10000; h.innerHTML = `<span class="conv">원 단위 → ${won(x)}으로 계산</span>`; }
     else h.innerHTML = def;
@@ -260,7 +260,7 @@
       $('miniIn').textContent = '숫자를 입력하세요';
     } else if (st === 'idle') {
       $('hEmo').textContent = '✍️'; $('hHead').textContent = '거래처에 쓴 돈을 넣어주세요';
-      $('hBody').innerHTML = `<p>매출 <b>${won(S)}</b>이면, 식자재는 <b>${won(T)}</b>까지 써도 됩니다. (매출의 ${pc(T/S)})</p>`;
+      $('hBody').innerHTML = `<p>지금까지 매출이 <b>${won(S)}</b>이면, 식자재는 <b>${won(T)}</b>까지 써도 됩니다. (매출의 ${pc(T/S)})</p>`;
       $('gauge').style.display = 'none'; $('hTodo').style.display = 'none';
       $('miniIn').textContent = `한도 ${won(T)}`;
     } else {
@@ -268,7 +268,7 @@
       const head = {ok:'적당히 쓰고 있어요', warn:'한도에 거의 다 찼어요', bad:'식자재를 한도보다 많이 썼어요'}[st];
       $('hEmo').textContent = EMO[st];
       $('hHead').textContent = head;
-      let body = `<p>매출 <b>${won(S)}</b>이면 식자재는 <b>${won(T)}</b>까지 OK</p>`;
+      let body = `<p>지금까지 매출이 <b>${won(S)}</b>이면 식자재는 <b>${won(T)}</b>까지 OK</p>`;
       body += `<p>지금 <b>${won(U)}</b> 썼으니 → ${diff >= 0 ? `아직 <b>${won(diff)}</b> 여유` : `<b>${won(-diff)}</b> 넘었어요`} (한도의 ${Math.round(U/T*100)}%)</p>`;
       if (diff < 0) body += `<p>매출이 <b>${won(needSales(U) - S)}</b> 더 오르면 한도 안으로 들어와요.</p>`;
       if (filled < 3) body += `<p style="font-size:13px;opacity:.8">※ 거래처 ${3-filled}곳이 비어 있어요. 0이면 0을 넣어주세요.</p>`;
@@ -324,7 +324,7 @@
 
     // ── 기준표
     const cur = S ? Math.max(3000, Math.min(15000, Math.floor(S/1000)*1000)) : null;
-    let t = '<tr><th>매출</th><th>에이엔오</th><th>수산</th><th>한국유통</th><th>합계 한도</th></tr>';
+    let t = '<tr><th>지금까지 매출</th><th>에이엔오</th><th>수산</th><th>한국유통</th><th>합계 한도</th></tr>';
     for (let s = 3000; s <= 15000; s += 1000) {
       const a = s*RATE.kr(s), b = s*RATE.ano(s), c = s*RATE.fish(s);
       t += `<tr class="${cur === s ? 'cur' : ''}"><td>${won(s)}${cur === s ? '<span class="chip">지금</span>' : ''}</td><td>${n1(b,1)}<small>${pc(RATE.ano(s))}</small></td><td>${n1(c,1)}</td><td>${n1(a,1)}</td><td>${n1(a+b+c,1)}<small>${pc((a+b+c)/s)}</small></td></tr>`;
@@ -333,7 +333,7 @@
 
     // ── 복사 / 기록
     if (S) {
-      const L = [`[식자재 중간점검] ${ds ? ds.slice(5).replace('-','/') : ''}`, `매출 ${won(S)} → 식자재 한도 ${won(T)}`];
+      const L = [`[식자재 중간점검] ${ds ? ds.slice(5).replace('-','/') : ''}`, `지금까지 매출 ${won(S)} → 식자재 한도 ${won(T)}`];
       if (U !== null) L.push(`${EMO[st]} 사용 ${won(U)} (한도의 ${Math.round(U/T*100)}%, ${T-U >= 0 ? won(T-U) + ' 여유' : won(U-T) + ' 초과'})`);
       VENDORS.forEach(v => { if (used[v.k] !== null) L.push(`${EMO[status(used[v.k], lim[v.k])]} ${v.n} ${won(used[v.k])} / 한도 ${won(lim[v.k])}`); });
       if (proj && U !== null) { const left = totalAt(proj) - U; L.push(left >= 0 ? `월말까지 ${won(left)} 더 발주 가능` : `월말 기준 ${won(-left)} 초과 예상`); }
@@ -346,7 +346,7 @@
   function renderHist(){
     const h = (store.get(HKEY) || []).slice().sort((a,b) => b.date.localeCompare(a.date));
     if (!h.length) { $('hist').innerHTML = '<p class="desc" style="margin:0">아직 저장된 기록이 없어요.</p>'; $('clearRec').style.display = 'none'; return; }
-    let t = '<table><tr><th>날짜</th><th>매출</th><th>식자재</th><th>상태</th></tr>';
+    let t = '<table><tr><th>날짜</th><th>지금까지 매출</th><th>식자재</th><th>상태</th></tr>';
     h.forEach((r, i) => {
       const p = h[i+1], pctNow = r.U / r.T;
       let chg = '';
