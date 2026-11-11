@@ -16,14 +16,14 @@
     --bad:#c23b2e; --badbg:#fde8e5; --badz:#e0574a;
   }
   *{box-sizing:border-box}
-  html,body{margin:0;overflow-x:clip;background:var(--bg);color:var(--ink);font-family:'Noto Sans KR',system-ui,sans-serif;-webkit-font-smoothing:antialiased;line-height:1.5}
+  html,body{margin:0;overflow-x:clip;background:var(--bg);color:var(--ink);font-family:'Noto Sans KR',system-ui,sans-serif;-webkit-font-smoothing:antialiased;line-height:1.55;word-break:keep-all;overflow-wrap:break-word}
   body{padding:calc(16px + env(safe-area-inset-top)) 14px calc(32px + env(safe-area-inset-bottom))}
   .wrap{max-width:520px;margin:0 auto}
   h1{font-size:21px;font-weight:900;margin:4px 2px 2px;letter-spacing:-.3px}
   .guide{font-size:13px;color:var(--sub);margin:0 2px 14px}
   .card{background:var(--card);border-radius:18px;padding:18px 16px;margin-bottom:12px;border:1px solid var(--line)}
   .card h2{font-size:16px;font-weight:900;margin:0 0 4px}
-  .card .desc{font-size:13px;color:var(--sub);margin:0 0 12px}
+  .card .desc{font-size:13px;color:var(--sub);margin:0 0 12px;line-height:1.6}
   b.ok{color:var(--ok)} b.warn{color:var(--warn)} b.bad{color:var(--bad)}
 
   /* 상단 고정바 */
@@ -36,10 +36,10 @@
   .st-ok{background:var(--okbg);color:#0f4f33} .st-warn{background:var(--warnbg);color:#4d3500} .st-bad{background:var(--badbg);color:#6e1a12} .st-idle{background:#ebe8e2;color:var(--ink)}
   .mini .st-ok{background:var(--ok);color:#fff} .mini .st-warn{background:var(--warnz);color:#2b2100} .mini .st-bad{background:var(--bad);color:#fff} .mini .st-idle{background:#8d8981;color:#fff}
   .hero .emo{font-size:34px;line-height:1}
-  .hero .head{font-size:24px;font-weight:900;letter-spacing:-.5px;margin:8px 0 10px;line-height:1.3}
-  .hero p{margin:0 0 6px;font-size:15px}
-  .hero p b{font-weight:900}
-  .hero .todo{margin-top:12px;background:rgba(255,255,255,.7);border-radius:12px;padding:11px 12px;font-size:15px;font-weight:700}
+  .hero .head{font-size:22px;font-weight:900;letter-spacing:-.4px;margin:8px 0 12px;line-height:1.35}
+  .hero p{margin:0 0 9px;font-size:15px;line-height:1.65}
+  .hero p b{font-weight:900;white-space:nowrap}
+  .hero .todo{margin-top:12px;background:rgba(255,255,255,.7);border-radius:12px;padding:11px 12px;font-size:15px;font-weight:700;line-height:1.55}
   .hero .todo small{display:block;font-weight:500;font-size:12px;opacity:.75;margin-bottom:2px}
 
   /* 게이지 */
@@ -73,12 +73,12 @@
   .bar{height:10px;background:#efece6;border-radius:10px;margin:9px 0 7px;position:relative}
   .bar i{display:block;height:100%;border-radius:10px;transition:width .25s}
   .bar u{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--ink);opacity:.35}
-  .vs{font-size:13px;color:var(--sub);font-variant-numeric:tabular-nums}
+  .vs{font-size:13px;color:var(--sub);font-variant-numeric:tabular-nums;line-height:1.7}
   .vs b{color:var(--ink)}
 
   /* 문장 리스트 */
   .say-list{margin:0;padding:0;list-style:none}
-  .say-list li{display:flex;gap:10px;padding:9px 0;border-top:1px solid var(--line);font-size:15px}
+  .say-list li{display:flex;gap:10px;padding:10px 0;border-top:1px solid var(--line);font-size:15px;line-height:1.6}
   .say-list li:first-child{border-top:0;padding-top:0}
   .say-list .n{flex:none;width:22px;height:22px;border-radius:50%;background:var(--ink);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:1px}
   .say-list b{font-weight:900}
@@ -129,7 +129,7 @@
     <div id="hBody"><p>매출과 거래처 3곳에 쓴 금액을 넣으면 결과가 여기에 나옵니다.</p></div>
     <div class="gauge" id="gauge" style="display:none">
       <div class="gtrack"><div class="gfill" id="gFill"></div><div class="gline" style="left:73.08%"></div><div class="gline" style="left:76.92%"></div></div>
-      <div class="glab"><span style="left:0;transform:none">0</span><span style="left:38.46%">기준의 절반</span><span style="left:76.92%">기준 100%</span><span style="right:0;left:auto;transform:none">130%</span></div>
+      <div class="glab"><span style="left:0;transform:none">0</span><span style="left:38.46%">한도의 절반</span><span style="left:76.92%">한도 100%</span></div>
     </div>
     <div class="todo" id="hTodo" style="display:none"></div>
   </div>
