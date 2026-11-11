@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="식자재점검">
+<title>식자재 중간점검</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f4f2ee; --card:#fff; --ink:#1c1b19; --sub:#6d6a64; --line:#e4e0d8;
+    --ok:#1f8a5b; --okbg:#e6f4ec; --okz:#4fb386;
+    --warn:#9a6a00; --warnbg:#fff3c4; --warnz:#f2c94c; --warnlamp:#f2b705;
+    --bad:#c23b2e; --badbg:#fbe5e2; --badz:#e0675b;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--ink);font-family:'Noto Sans KR',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  body{padding:calc(16px + env(safe-area-inset-top)) 14px calc(32px + env(safe-area-inset-bottom))}
+  .wrap{max-width:520px;margin:0 auto}
+  header{display:flex;align-items:flex-end;justify-content:space-between;margin:4px 2px 14px}
+  h1{font-size:20px;font-weight:900;margin:0;letter-spacing:-.3px}
+  .unit{font-size:12px;color:var(--sub)}
+  .card{background:var(--card);border-radius:16px;padding:16px;margin-bottom:12px;border:1px solid var(--line)}
+  .card h2{font-size:13px;font-weight:700;color:var(--sub);margin:0 0 10px;letter-spacing:.2px;display:flex;justify-content:space-between;align-items:center}
+  .note{font-size:12px;color:var(--sub);line-height:1.6;margin:8px 2px 0}
+
+  /* sticky mini bar */
+  .mini{position:fixed;left:0;right:0;top:0;z-index:20;padding:calc(8px + env(safe-area-inset-top)) 14px 8px;display:flex;justify-content:center;transform:translateY(-110%);transition:transform .2s}
+  .mini.show{transform:none}
+  .mini div{max-width:520px;width:100%;display:flex;align-items:center;gap:10px;border-radius:12px;padding:10px 14px;font-size:14px;font-weight:700;box-shadow:0 2px 10px rgba(0,0,0,.15);color:#fff}
+  .mini .sub{font-weight:500;opacity:.9;margin-left:auto;font-size:13px}
+
+  /* verdict */
+  .verdict{border-radius:16px;padding:16px;margin-bottom:12px;color:#fff;background:#8d8981}
+  .s-ok{background:var(--ok)} .s-warn{background:var(--warnlamp);color:#2b2100} .s-bad{background:var(--bad)} .s-idle{background:#8d8981}
+  .verdict .top{display:flex;align-items:center;gap:12px}
+  .lamp{width:40px;height:40px;border-radius:50%;flex:none;background:rgba(255,255,255,.9);box-shadow:inset 0 -3px 0 rgba(0,0,0,.12)}
+  .s-ok .lamp{background:#bff0d6} .s-warn .lamp{background:#fff6cc} .s-bad .lamp{background:#ffd3cd}
+  .verdict .lab{font-size:13px;opacity:.85}
+  .verdict .big{font-size:28px;font-weight:900;letter-spacing:-.5px;line-height:1.15}
+  .verdict .line{font-size:14px;margin-top:10px;font-variant-numeric:tabular-nums;line-height:1.55}
+  .verdict .todo{margin-top:10px;padding-top:10px;border-top:1px solid currentColor;border-top-color:rgba(127,127,127,.35);font-size:14px;font-weight:700}
+
+  /* inputs */
+  .row{display:flex;align-items:center;gap:10px;padding:7px 0}
+  .row label{flex:1;font-size:15px;font-weight:500}
+  .row .hint{display:block;font-size:11px;color:var(--sub);font-weight:400;margin-top:1px}
+  .row .conv{display:block;font-size:11px;color:var(--ok);font-weight:700;margin-top:1px}
+  .row input{width:46%;font:inherit;font-size:18px;font-weight:700;text-align:right;padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;background:#fbfaf7;outline:none;font-variant-numeric:tabular-nums}
+  .row input:focus{border-color:var(--ink);background:#fff}
+  .row input[type=date]{font-size:15px;font-weight:500}
+  .sep{height:1px;background:var(--line);margin:6px 0}
+
+  /* vendors */
+  .v{padding:12px 0;border-top:1px solid var(--line)}
+  .v:first-child{border-top:0;padding-top:2px}
+  .vh{display:flex;justify-content:space-between;align-items:baseline}
+  .vn{font-size:16px;font-weight:700}
+  .tag{font-size:12px;font-weight:700;padding:3px 8px;border-radius:20px}
+  .tag.ok{color:var(--ok);background:var(--okbg)} .tag.warn{color:var(--warn);background:var(--warnbg)} .tag.bad{color:var(--bad);background:var(--badbg)} .tag.idle{color:var(--sub);background:#efece6}
+  .bar{height:8px;background:#efece6;border-radius:8px;margin:8px 0 6px;overflow:hidden}
+  .bar i{display:block;height:100%;border-radius:8px;transition:width .25s}
+  .nums{display:flex;justify-content:space-between;font-size:13px;color:var(--sub);font-variant-numeric:tabular-nums;margin-top:2px}
+  .nums b{color:var(--ink);font-weight:700}
+
+  /* kv */
+  .kv{display:flex;justify-content:space-between;gap:10px;padding:6px 0;font-size:14px;font-variant-numeric:tabular-nums}
+  .kv span:first-child{color:var(--sub);flex:none}
+  .kv b{font-weight:700;text-align:right}
+
+  /* range */
+  .range{padding:16px 4px 0}
+  .track{position:relative;height:14px;background:#efece6;border-radius:10px}
+  .zones{position:absolute;inset:0;border-radius:10px;overflow:hidden;display:flex}
+  .zones u{flex:1;text-decoration:none}
+  .track b,.track s{position:absolute;top:50%;border-radius:50%;display:none}
+  .track b{width:20px;height:20px;margin:-10px 0 0 -10px;background:var(--ink);border:3px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.3);z-index:2}
+  .track s{width:14px;height:14px;margin:-7px 0 0 -7px;background:#fff;border:3px solid var(--ink)}
+  .ticks{display:flex;justify-content:space-between;font-size:11px;color:var(--sub);margin-top:8px}
+  .legend{display:flex;gap:12px;font-size:12px;color:var(--sub);margin:10px 0 6px;flex-wrap:wrap}
+  .legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:-1px}
+  .dot{display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:-1px;margin-right:3px}
+  .dot.now{background:var(--ink)} .dot.need{background:#fff;border:2px solid var(--ink)}
+
+  /* table */
+  table{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}
+  th,td{padding:7px 4px;text-align:right;border-bottom:1px solid var(--line)}
+  th:first-child,td:first-child{text-align:left}
+  th{color:var(--sub);font-weight:500;font-size:12px}
+  td small{display:block;font-size:10px;color:var(--sub);font-weight:400}
+  tr.r-ok td{background:#eef8f2} tr.r-warn td{background:#fff6d2} tr.r-bad td{background:#fdecea}
+  tr.cur td{font-weight:900;border-top:2px solid var(--ink);border-bottom:2px solid var(--ink)}
+  tr.cur td:first-child{border-left:2px solid var(--ink)} tr.cur td:last-child{border-right:2px solid var(--ink)}
+  .chip{display:inline-block;font-size:10px;font-weight:700;background:var(--ink);color:#fff;border-radius:6px;padding:1px 5px;margin-left:3px;vertical-align:1px}
+  .link{border:0;background:none;font:inherit;font-size:13px;font-weight:700;color:var(--ink);text-decoration:underline;cursor:pointer;padding:8px 0 0}
+
+  /* history */
+  .hist td:first-child{white-space:nowrap}
+  .hdot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;vertical-align:0}
+  .up{color:var(--bad)} .down{color:var(--ok)}
+  .mini-btn{border:0;border-radius:8px;padding:6px 10px;font:inherit;font-size:12px;font-weight:700;cursor:pointer;background:var(--ink);color:#fff}
+
+  .btns{display:flex;gap:8px}
+  .btn{flex:1;border:0;border-radius:12px;padding:13px;font:inherit;font-size:15px;font-weight:700;cursor:pointer}
+  .btn.pri{background:var(--ink);color:#fff}
+  .btn.sec{background:#e8e4dc;color:var(--ink)}
+  .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:10px 16px;border-radius:10px;font-size:14px;opacity:0;transition:.2s;pointer-events:none;z-index:30}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .confirm{display:none;margin-top:8px;font-size:13px;align-items:center;gap:8px}
+  .confirm.show{display:flex}
+  .confirm button{border:0;border-radius:8px;padding:7px 12px;font:inherit;font-size:13px;font-weight:700;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="mini" id="mini"><div class="s-idle" id="miniIn"><span id="miniT">입력 대기</span><span class="sub" id="miniS"></span></div></div>
+
+<div class="wrap">
+  <header>
+    <h1>식자재 중간점검</h1>
+    <span class="unit">단위: 만원</span>
+  </header>
+
+  <div id="nojs" style="background:#fbe5e2;color:#c23b2e;border-radius:12px;padding:12px 14px;margin-bottom:12px;font-size:14px;font-weight:700;line-height:1.5">
+    ⚠ 지금 화면은 '미리보기'라 계산이 안 됩니다.<br>
+    <span style="font-weight:500">파일을 <b>크롬</b>(아이폰은 <b>사파리</b>)으로 열어주세요.<br>카톡·파일앱·드라이브 미리보기에서는 작동하지 않습니다.</span>
+  </div>
+
+  <!-- 1. 결론 -->
+  <div class="verdict s-idle" id="verdict">
+    <div class="top">
+      <div class="lamp"></div>
+      <div>
+        <div class="lab" id="vLab">3개 거래처 합계 판정</div>
+        <div class="big" id="vBig">입력 대기</div>
+      </div>
+    </div>
+    <div class="line" id="vLine">누적매출과 거래처 누적액을 입력하세요</div>
+    <div class="todo" id="vTodo" style="display:none"></div>
+  </div>
+
+  <!-- 2. 입력 -->
+  <div class="card">
+    <h2>입력 <span style="font-weight:400;font-size:11px">원 단위로 넣어도 자동 환산</span></h2>
+    <div class="row"><label>기준일</label><input type="date" id="date"></div>
+    <div class="row"><label>누적매출<span class="hint" id="h-sales">이번 달 1일~기준일</span></label><input id="sales" inputmode="decimal" placeholder="0"></div>
+    <div class="sep"></div>
+    <div class="row"><label>한국유통 누적<span class="hint" id="h-kr"></span></label><input id="kr" inputmode="decimal" placeholder="0"></div>
+    <div class="row"><label>에이엔오 누적<span class="hint" id="h-ano"></span></label><input id="ano" inputmode="decimal" placeholder="0"></div>
+    <div class="row"><label>수산 누적<span class="hint" id="h-fish"></span></label><input id="fish" inputmode="decimal" placeholder="0"></div>
+  </div>
+
+  <!-- 3. 거래처별 -->
+  <div class="card">
+    <h2>거래처별 <span style="font-weight:400;font-size:11px">월말 가능 = 예상 월매출 기준</span></h2>
+    <div id="vendors"></div>
+  </div>
+
+  <!-- 4. 구간 -->
+  <div class="card">
+    <h2>구간 위치 (3,000만 ~ 1억5천만)</h2>
+    <div class="range">
+      <div class="track"><div class="zones" id="rZones"></div><b id="rNow"></b><s id="rNeed"></s></div>
+      <div class="ticks"><span>3천</span><span>6천</span><span>9천</span><span>1.2억</span><span>1.5억</span></div>
+    </div>
+    <div class="legend"><span><i style="background:var(--okz)"></i>안전 ≤95%</span><span><i style="background:var(--warnz)"></i>주의 95~100%</span><span><i style="background:var(--badz)"></i>위험 &gt;100%</span></div>
+    <div class="legend" style="margin-top:0"><span><span class="dot now"></span>현재 누적매출</span><span><span class="dot need"></span>지금 사용액이 안전해지는 매출</span></div>
+    <div style="margin-top:4px">
+      <div class="kv"><span>현재 구간</span><b id="rBand">-</b></div>
+      <div class="kv"><span>적용 합계 비율</span><b id="rRate">-</b></div>
+      <div class="kv"><span>다음 구간까지</span><b id="rNext">-</b></div>
+      <div class="kv"><span>정상 판정 필요매출</span><b id="rNeedTxt">-</b></div>
+    </div>
+    <table id="ref" style="margin-top:8px"></table>
+    <button class="link" id="toggleRef">전체 13구간 보기</button>
+  </div>
+
+  <!-- 5. 월마감 -->
+  <div class="card">
+    <h2>월마감 예상</h2>
+    <div class="kv"><span>경과일 / 월 일수</span><b id="pDays">-</b></div>
+    <div class="kv"><span>일평균 매출</span><b id="pDaily">-</b></div>
+    <div class="kv"><span>예상 월매출</span><b id="pSales">-</b></div>
+    <div class="kv"><span>예상 월 식자재 한도 (3개)</span><b id="pLimit">-</b></div>
+    <div class="kv"><span>월말까지 발주 가능액</span><b id="pLeft">-</b></div>
+    <div class="kv"><span>남은 일수 하루 발주 가능액</span><b id="pPerDay">-</b></div>
+    <p class="note">현재 매출 속도가 월말까지 유지된다는 가정입니다. 월초 재고 확보분이 있으면 실제 여유는 더 큽니다.</p>
+  </div>
+
+  <!-- 6. 기록 -->
+  <div class="card">
+    <h2>점검 기록 <button class="mini-btn" id="saveRec">오늘 기록 저장</button></h2>
+    <div id="hist"><p class="note" style="margin:0">점검할 때마다 저장하면 비율 변화를 비교할 수 있습니다. 같은 날짜는 덮어씁니다.</p></div>
+    <button class="link" id="clearRec" style="display:none">기록 전체 삭제</button>
+    <div class="confirm" id="confirmRec">
+      <span>기록을 모두 지울까요?</span>
+      <button style="background:var(--bad);color:#fff" id="yesRec">지우기</button>
+      <button style="background:#e8e4dc" id="noRec">취소</button>
+    </div>
+  </div>
+
+  <div class="btns">
+    <button class="btn pri" id="copy">결과 복사</button>
+    <button class="btn sec" id="reset">입력 초기화</button>
+  </div>
+  <div class="confirm" id="confirm">
+    <span>입력값을 지울까요? (기록은 유지)</span>
+    <button style="background:var(--bad);color:#fff" id="yes">지우기</button>
+    <button style="background:#e8e4dc" id="no">취소</button>
+  </div>
+
+  <p class="note">
+    기준 비율 · 한국유통 3.5% 고정 · 수산 12% 고정 · 에이엔오 15.75%(3,000만원)에서 1,000만원마다 +0.25%p, 최대 18%<br>
+    판정 · 기준 대비 95% 이하 안전 / 95~100% 주의 / 100% 초과 위험<br>
+    위험이라도 바로 발주 중단하지 말고 현재 재고와 월마감 예상매출을 함께 확인하세요.<br>
+    입력값과 기록은 이 기기 브라우저에만 저장됩니다.
+  </p>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  const RATE = {
+    kr: () => 0.035,
+    fish: () => 0.12,
+    ano: s => Math.min(0.18, Math.max(0.1575, 0.1575 + (s - 3000) / 1000 * 0.0025))
+  };
+  const VENDORS = [{k:'kr', n:'한국유통'}, {k:'ano', n:'에이엔오'}, {k:'fish', n:'수산'}];
+  const MIN = 3000, MAX = 15000;
+  const $ = id => document.getElementById(id);
+  const inputs = ['sales','kr','ano','fish'];
+  const KEY = 'gs-check', HKEY = 'gs-check-history';
+  const ST = {ok:'안전', warn:'주의', bad:'위험', idle:'미입력'};
+  const BAR = {ok:'var(--okz)', warn:'var(--warnz)', bad:'var(--badz)', idle:'#c9c4ba'};
+  const DOT = {ok:'var(--ok)', warn:'var(--warnlamp)', bad:'var(--bad)', idle:'#c9c4ba'};
+  let showAllRef = false, summary = '', snap = null;
+
+  const fmt = (n, d=1) => {
+    if (n === null || n === undefined || isNaN(n)) return '-';
+    const p = Math.pow(10,d), r = Math.round(n * p) / p;
+    return r.toLocaleString('ko-KR', {minimumFractionDigits:0, maximumFractionDigits:d});
+  };
+  const pct = n => (n === null || isNaN(n) || !isFinite(n)) ? '-' : (Math.round(n*10000)/100) + '%';
+  // 숫자 읽기: 10만 이상이면 원 단위로 보고 만원으로 환산
+  function read(id){
+    const raw = String($(id).value).replace(/[,\s원]/g,'');
+    let x = parseFloat(raw);
+    const h = $('h-' + id);
+    if (isNaN(x)) { if (h) h.innerHTML = id === 'sales' ? '이번 달 1일~기준일' : ''; return null; }
+    if (x >= 100000) {
+      x = x / 10000;
+      if (h) h.innerHTML = `<span class="conv">원 → ${fmt(x)}만원으로 계산</span>`;
+    } else if (h) h.innerHTML = id === 'sales' ? '이번 달 1일~기준일' : '';
+    return x;
+  }
+  const status = (used, limit) => {
+    if (used === null || used === undefined || !limit) return 'idle';
+    const r = used / limit;
+    return r <= 0.95 ? 'ok' : r <= 1 ? 'warn' : 'bad';
+  };
+  const totalAt = s => VENDORS.reduce((a,v) => a + s * RATE[v.k](s), 0);
+  const posPct = s => Math.max(0, Math.min(1, (s - MIN) / (MAX - MIN))) * 100;
+  function needSales(U){
+    let lo = 0, hi = 200000;
+    for (let i = 0; i < 60; i++) { const m = (lo + hi) / 2; if (totalAt(m) >= U) hi = m; else lo = m; }
+    return hi;
+  }
+  const bandText = S => S < MIN ? '3,000만원 미만' : S >= MAX ? '1억5천만원 이상' : `${fmt(Math.floor(S/1000)*1000,0)}~${fmt(Math.floor(S/1000)*1000+1000,0)}만원`;
+
+  const store = {
+    get(k){ try { return JSON.parse(localStorage.getItem(k)); } catch(e){ return null; } },
+    set(k,v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} }
+  };
+  const today = () => { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0,10); };
+
+  function load(){
+    const d = store.get(KEY) || {};
+    inputs.forEach(k => $(k).value = d[k] != null ? d[k] : '');
+    $('date').value = d.date || today();
+    calc(); renderHist();
+  }
+  function save(){
+    const d = {date: $('date').value};
+    inputs.forEach(k => d[k] = $(k).value);
+    store.set(KEY, d);
+  }
+
+  function calc(){
+    const S = read('sales');
+    const used = {}; VENDORS.forEach(v => used[v.k] = read(v.k));
+    const lim = {}; VENDORS.forEach(v => lim[v.k] = S ? S * RATE[v.k](S) : null);
+    const anyUsed = VENDORS.some(v => used[v.k] !== null);
+    const U = anyUsed ? VENDORS.reduce((a,v) => a + (used[v.k] || 0), 0) : null;
+    const T = S ? totalAt(S) : null;
+    const st = status(U, T);
+
+    // 월마감 예상
+    const ds = $('date').value;
+    let dayN = null, monthDays = null, proj = null;
+    if (ds) { const [y,m,d] = ds.split('-').map(Number); dayN = d; monthDays = new Date(y, m, 0).getDate(); }
+    if (S && dayN) proj = S / dayN * monthDays;
+
+    // 1. 결론
+    $('verdict').className = 'verdict s-' + st;
+    $('miniIn').className = 's-' + st;
+    if (st === 'idle') {
+      $('vLab').textContent = S ? `현재 구간 ${bandText(S)}` : '3개 거래처 합계 판정';
+      $('vBig').textContent = '입력 대기';
+      $('vLine').textContent = S ? `기준 합계 ${fmt(T)}만원 (${pct(T/S)}) · 거래처 누적액을 입력하세요` : '누적매출과 거래처 누적액을 입력하세요';
+      $('vTodo').style.display = 'none';
+      $('miniT').textContent = '입력 대기'; $('miniS').textContent = S ? bandText(S) : '';
+    } else {
+      const diff = T - U;
+      $('vLab').textContent = `현재 구간 ${bandText(S)}`;
+      $('vBig').textContent = `${ST[st]} · 기준의 ${Math.round(U/T*100)}%`;
+      $('vLine').innerHTML = `사용 <b>${fmt(U)}</b> / 기준 <b>${fmt(T)}</b>만원 · ${diff >= 0 ? '여유 <b>' + fmt(diff) + '</b>' : '초과 <b>' + fmt(-diff) + '</b>'}만원<br>실제 비율 ${pct(U/S)} · 기준 비율 ${pct(T/S)}`;
+      const over = VENDORS.filter(v => status(used[v.k], lim[v.k]) === 'bad').map(v => v.n);
+      const warn = VENDORS.filter(v => status(used[v.k], lim[v.k]) === 'warn').map(v => v.n);
+      let todo;
+      if (over.length) todo = `지금 할 일: ${over.join('·')} 재고 확인 후 다음 발주량 줄이기`;
+      else if (warn.length) todo = `지금 할 일: ${warn.join('·')} 다음 발주 전 재고 먼저 확인`;
+      else todo = '지금 할 일: 현재 발주 패턴 유지';
+      $('vTodo').textContent = todo; $('vTodo').style.display = 'block';
+      $('miniT').textContent = `${ST[st]} ${Math.round(U/T*100)}%`;
+      $('miniS').textContent = `${bandText(S)} · ${diff >= 0 ? '여유 ' + fmt(diff) : '초과 ' + fmt(-diff)}`;
+    }
+
+    // 3. 거래처별
+    let html = '';
+    VENDORS.forEach(v => {
+      const u = used[v.k], l = lim[v.k], s2 = status(u, l);
+      const ratio = (u !== null && l) ? u / l : 0;
+      const diff = (u !== null && l !== null) ? l - u : null;
+      const mLim = proj ? proj * RATE[v.k](proj) : null;
+      const mLeft = (mLim !== null && u !== null) ? mLim - u : null;
+      html += `<div class="v">
+        <div class="vh"><span class="vn">${v.n}</span><span class="tag ${s2}">${ST[s2]}${s2 !== 'idle' ? ' ' + Math.round(ratio*100) + '%' : ''}</span></div>
+        <div class="bar"><i style="width:${Math.min(ratio,1)*100}%;background:${BAR[s2]}"></i></div>
+        <div class="nums"><span>사용 <b>${fmt(u)}</b> / 기준 <b>${fmt(l)}</b></span>
+          <span>${diff === null ? '' : diff >= 0 ? '여유 <b>' + fmt(diff) + '</b>' : '초과 <b style="color:var(--bad)">' + fmt(-diff) + '</b>'}</span></div>
+        <div class="nums"><span>실제 ${S && u !== null ? pct(u/S) : '-'} · 기준 ${S ? pct(RATE[v.k](S)) : '-'}</span>
+          <span>월말 가능 ${mLeft === null ? '-' : mLeft >= 0 ? '<b>' + fmt(mLeft, 0) + '</b>' : '<b style="color:var(--bad)">' + fmt(mLeft, 0) + '</b>'}</span></div>
+      </div>`;
+    });
+    $('vendors').innerHTML = html;
+
+    // 4. 구간
+    renderRange(S, U);
+
+    // 5. 월마감
+    if (proj) {
+      const pL = totalAt(proj);
+      $('pDays').textContent = `${dayN}일 / ${monthDays}일`;
+      $('pDaily').textContent = fmt(S / dayN, 0) + '만원';
+      $('pSales').textContent = fmt(proj, 0) + '만원';
+      $('pLimit').textContent = fmt(pL, 0) + `만원 (${pct(pL/proj)})`;
+      if (U !== null) {
+        const left = pL - U, remain = monthDays - dayN;
+        $('pLeft').innerHTML = left >= 0 ? fmt(left, 0) + '만원' : `<span style="color:var(--bad)">${fmt(left, 0)}만원</span>`;
+        $('pPerDay').innerHTML = remain > 0 ? (left >= 0 ? fmt(left / remain, 0) + `만원 × ${remain}일` : '<span style="color:var(--bad)">여유 없음</span>') : '월말';
+      } else { $('pLeft').textContent = '-'; $('pPerDay').textContent = '-'; }
+    } else ['pDays','pDaily','pSales','pLimit','pLeft','pPerDay'].forEach(id => $(id).textContent = '-');
+
+    // 복사용 / 기록용
+    if (S) {
+      const lines = [`식자재 중간점검 (${ds || ''})`, `누적매출 ${fmt(S,0)}만원 · 구간 ${bandText(S)}`];
+      VENDORS.forEach(v => lines.push(`- ${v.n}: ${fmt(used[v.k])} / 기준 ${fmt(lim[v.k])} (${ST[status(used[v.k], lim[v.k])]})`));
+      if (U !== null) lines.push(`합계: ${fmt(U)} / 기준 ${fmt(T)} → ${ST[st]} ${Math.round(U/T*100)}% (실제 ${pct(U/S)})`);
+      if (proj && U !== null) lines.push(`월말까지 발주 가능: ${fmt(totalAt(proj) - U, 0)}만원`);
+      summary = lines.join('\n');
+    } else summary = '';
+    snap = (S && U !== null) ? {date: ds, S, U, T, st} : null;
+  }
+
+  function renderRange(S, U){
+    const hasU = U !== null && U !== undefined;
+    let z = '';
+    for (let s = MIN; s < MAX; s += 1000) z += `<u style="background:${hasU ? BAR[status(U, totalAt(s))] : 'transparent'}"></u>`;
+    $('rZones').innerHTML = z;
+    const now = $('rNow'), need = $('rNeed');
+    if (S) {
+      now.style.left = posPct(S) + '%'; now.style.display = 'block';
+      $('rBand').textContent = bandText(S) + (S < MIN ? ' (최저 비율 적용)' : '');
+      $('rRate').textContent = `${pct(totalAt(S)/S)} (기준 ${fmt(totalAt(S))}만원)`;
+      if (S < MAX) { const nx = S < MIN ? MIN : Math.floor(S/1000)*1000 + 1000; $('rNext').textContent = `${fmt(nx - S, 0)}만원 남음 → ${pct(totalAt(nx)/nx)}`; }
+      else $('rNext').textContent = '최고 구간';
+    } else { now.style.display = 'none'; ['rBand','rRate','rNext'].forEach(id => $(id).textContent = '-'); }
+    if (hasU && U > 0) {
+      const ns = needSales(U);
+      need.style.left = posPct(ns) + '%'; need.style.display = 'block';
+      let txt = `${fmt(ns, 0)}만원`;
+      if (S) txt += ns <= S ? ` (${fmt(S - ns, 0)}만원 여유)` : ` (${fmt(ns - S, 0)}만원 더 필요)`;
+      $('rNeedTxt').innerHTML = (S && ns <= S) ? txt : `<span style="color:var(--bad)">${txt}</span>`;
+    } else { need.style.display = 'none'; $('rNeedTxt').textContent = '-'; }
+
+    // 표: 기본은 현재 구간 앞뒤 2줄
+    const cur = S ? Math.max(MIN, Math.min(MAX, Math.floor(S/1000)*1000)) : null;
+    let t = `<tr><th>누적매출</th><th>한국</th><th>에이엔오</th><th>수산</th><th>합계</th><th>${hasU ? '판정' : '비율'}</th></tr>`;
+    for (let s = MIN; s <= MAX; s += 1000) {
+      if (!showAllRef && cur !== null && Math.abs(s - cur) > 2000) continue;
+      const a = s*RATE.kr(s), b = s*RATE.ano(s), c = s*RATE.fish(s), sum = a+b+c;
+      let rc = '', last;
+      if (hasU) {
+        const d = sum - U, rs = status(U, sum); rc = 'r-' + rs;
+        const col = {ok:'var(--ok)', warn:'var(--warn)', bad:'var(--bad)'}[rs];
+        last = `<td style="color:${col};font-weight:700">${ST[rs]}<small style="color:${col}">${d >= 0 ? '+' : ''}${fmt(d)}</small></td>`;
+      } else last = `<td>${pct(sum/s)}</td>`;
+      t += `<tr class="${rc} ${cur === s ? 'cur' : ''}"><td>${fmt(s,0)}${cur === s ? '<span class="chip">현재</span>' : ''}</td><td>${fmt(a)}</td><td>${fmt(b)}</td><td>${fmt(c)}</td><td>${fmt(sum)}${hasU ? '<small>' + pct(sum/s) + '</small>' : ''}</td>${last}</tr>`;
+    }
+    $('ref').innerHTML = t;
+    $('toggleRef').style.display = cur === null ? 'none' : 'inline';
+    $('toggleRef').textContent = showAllRef ? '현재 구간 주변만 보기' : '전체 13구간 보기';
+  }
+
+  // 기록
+  function renderHist(){
+    const h = store.get(HKEY) || [];
+    if (!h.length) {
+      $('hist').innerHTML = '<p class="note" style="margin:0">점검할 때마다 저장하면 비율 변화를 비교할 수 있습니다. 같은 날짜는 덮어씁니다.</p>';
+      $('clearRec').style.display = 'none'; return;
+    }
+    const list = h.slice().sort((a,b) => b.date.localeCompare(a.date));
+    let t = '<table class="hist"><tr><th>날짜</th><th>누적매출</th><th>사용 합계</th><th>실제 비율</th><th>판정</th></tr>';
+    list.forEach((r, i) => {
+      const prev = list[i+1];
+      const rate = r.U / r.S;
+      let chg = '';
+      if (prev) { const d = (rate - prev.U/prev.S) * 100; if (Math.abs(d) >= 0.01) chg = `<small class="${d > 0 ? 'up' : 'down'}">${d > 0 ? '▲' : '▼'}${Math.abs(d).toFixed(2)}%p</small>`; }
+      t += `<tr><td>${r.date.slice(5).replace('-','/')}</td><td>${fmt(r.S,0)}</td><td>${fmt(r.U)}</td><td>${pct(rate)}${chg}</td><td><span class="hdot" style="background:${DOT[r.st]}"></span>${ST[r.st]} ${Math.round(r.U/r.T*100)}%</td></tr>`;
+    });
+    $('hist').innerHTML = t + '</table>';
+    $('clearRec').style.display = 'inline';
+  }
+  $('saveRec').addEventListener('click', () => {
+    if (!snap || !snap.date) { toast('누적매출과 거래처 값을 먼저 입력하세요'); return; }
+    const h = (store.get(HKEY) || []).filter(r => r.date !== snap.date);
+    h.push(snap); h.sort((a,b) => a.date.localeCompare(b.date));
+    store.set(HKEY, h.slice(-62)); renderHist(); toast(`${snap.date.slice(5).replace('-','/')} 기록 저장됨`);
+  });
+  $('clearRec').addEventListener('click', () => $('confirmRec').classList.add('show'));
+  $('noRec').addEventListener('click', () => $('confirmRec').classList.remove('show'));
+  $('yesRec').addEventListener('click', () => { store.set(HKEY, []); renderHist(); $('confirmRec').classList.remove('show'); toast('기록 삭제됨'); });
+
+  // 기타 이벤트
+  ['input','change','keyup'].forEach(ev => inputs.concat(['date']).forEach(k => $(k).addEventListener(ev, () => { calc(); save(); })));
+  inputs.forEach(k => $(k).addEventListener('focus', e => e.target.select()));
+  $('toggleRef').addEventListener('click', () => { showAllRef = !showAllRef; calc(); });
+  const toast = msg => { const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('show'), 1600); };
+  $('copy').addEventListener('click', async () => {
+    if (!summary) { toast('누적매출을 먼저 입력하세요'); return; }
+    try { await navigator.clipboard.writeText(summary); toast('복사됨 · 카톡에 붙여넣기'); }
+    catch(e) { toast('복사가 막혀 있습니다'); }
+  });
+  $('reset').addEventListener('click', () => $('confirm').classList.add('show'));
+  $('no').addEventListener('click', () => $('confirm').classList.remove('show'));
+  $('yes').addEventListener('click', () => {
+    inputs.forEach(k => $(k).value = ''); $('date').value = today(); save(); calc();
+    $('confirm').classList.remove('show'); toast('입력 초기화됨');
+  });
+
+  // 스크롤 시 상단 상태바
+  const onScroll = () => {
+    const r = $('verdict').getBoundingClientRect();
+    $('mini').classList.toggle('show', r.bottom < 0);
+  };
+  window.addEventListener('scroll', onScroll, {passive:true});
+
+  $('nojs').style.display = 'none';
+  load();
+})();
+</script>
+</body>
+</html>
