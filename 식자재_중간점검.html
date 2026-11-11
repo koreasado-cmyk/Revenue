@@ -16,7 +16,7 @@
     --bad:#c23b2e; --badbg:#fde8e5; --badz:#e0574a;
   }
   *{box-sizing:border-box}
-  html,body{margin:0;background:var(--bg);color:var(--ink);font-family:'Noto Sans KR',system-ui,sans-serif;-webkit-font-smoothing:antialiased;line-height:1.5}
+  html,body{margin:0;overflow-x:clip;background:var(--bg);color:var(--ink);font-family:'Noto Sans KR',system-ui,sans-serif;-webkit-font-smoothing:antialiased;line-height:1.5}
   body{padding:calc(16px + env(safe-area-inset-top)) 14px calc(32px + env(safe-area-inset-bottom))}
   .wrap{max-width:520px;margin:0 auto}
   h1{font-size:21px;font-weight:900;margin:4px 2px 2px;letter-spacing:-.3px}
@@ -53,14 +53,17 @@
   /* 입력 */
   .row{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line)}
   .row:first-of-type{border-top:0}
-  .row label{flex:1;font-size:15px;font-weight:700}
-  .row .hint{display:block;font-size:12px;color:var(--sub);font-weight:400}
-  .row .conv{display:block;font-size:12px;color:var(--ok);font-weight:700}
-  .row .box{width:46%;position:relative}
+  .row label{flex:1;min-width:0;font-size:15px;font-weight:700}
+  .row .hint{display:block;font-size:12px;color:var(--sub);font-weight:400;overflow-wrap:anywhere}
+  .row .conv{display:block;font-size:12px;color:var(--ok);font-weight:700;overflow-wrap:anywhere}
+  .row .box{flex:none;width:46%;max-width:190px;position:relative}
+  .row .box:has(input[type=date]){width:56%;max-width:210px}
   .row input{width:100%;font:inherit;font-size:19px;font-weight:700;text-align:right;padding:11px 46px 11px 12px;border:1.5px solid var(--line);border-radius:12px;background:#fbfaf7;outline:none;font-variant-numeric:tabular-nums}
   .row .box em{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-style:normal;font-size:13px;color:var(--sub)}
   .row input:focus{border-color:var(--ink);background:#fff}
-  .row input[type=date]{font-size:15px;font-weight:500;padding-right:12px}
+  .row input.long{font-size:15px}
+  .row input.vlong{font-size:13px}
+  .row input[type=date]{font-size:14px;font-weight:500;padding:11px 8px;text-align:center;-webkit-appearance:none;appearance:none;min-height:46px}
 
   /* 거래처 */
   .v{padding:14px 0;border-top:1px solid var(--line)}
@@ -134,9 +137,9 @@
   <!-- 입력 -->
   <div class="card">
     <h2>① 숫자 입력</h2>
-    <p class="desc">이번 달 1일부터 오늘까지 합계를 넣으세요. 만원 단위, 원 단위 둘 다 됩니다.</p>
+    <p class="desc">만원 단위(6000), 원 단위(60000000) 둘 다 됩니다. 원 단위는 자동으로 만원으로 바꿔 계산해요.</p>
     <div class="row"><label>오늘 날짜</label><div class="box"><input type="date" id="date"></div></div>
-    <div class="row"><label>지금까지 매출<span class="hint" id="h-sales">이번 달 1일~오늘 · 예: 6000 또는 60,000,000</span></label><div class="box"><input id="sales" inputmode="decimal" placeholder="0"><em>만원</em></div></div>
+    <div class="row"><label>지금까지 매출<span class="hint" id="h-sales">이번 달 1일~오늘 합계</span></label><div class="box"><input id="sales" inputmode="decimal" placeholder="예: 6000"><em>만원</em></div></div>
     <div class="row"><label>에이엔오에 쓴 돈<span class="hint" id="h-ano"></span></label><div class="box"><input id="ano" inputmode="decimal" placeholder="0"><em>만원</em></div></div>
     <div class="row"><label>수산에 쓴 돈<span class="hint" id="h-fish"></span></label><div class="box"><input id="fish" inputmode="decimal" placeholder="0"><em>만원</em></div></div>
     <div class="row"><label>한국유통에 쓴 돈<span class="hint" id="h-kr"></span></label><div class="box"><input id="kr" inputmode="decimal" placeholder="0"><em>만원</em></div></div>
@@ -218,7 +221,7 @@
   function read(id){
     const raw = String($(id).value).replace(/[,\s원만]/g,'');
     let x = parseFloat(raw);
-    const h = $('h-' + id), def = id === 'sales' ? '이번 달 1일~오늘 · 예: 6000 또는 60,000,000' : '';
+    const h = $('h-' + id), def = id === 'sales' ? '이번 달 1일~오늘 합계' : '';
     if (isNaN(x)) { h.innerHTML = def; return null; }
     if (x >= 100000) { x = x / 10000; h.innerHTML = `<span class="conv">원 단위 → ${won(x)}으로 계산</span>`; }
     else h.innerHTML = def;
@@ -368,7 +371,14 @@
 
   // ── 기타
   ['input','change','keyup'].forEach(ev => inputs.concat(['date']).forEach(k => $(k).addEventListener(ev, () => { calc(); save(); })));
-  inputs.forEach(k => $(k).addEventListener('focus', e => e.target.select()));
+  inputs.forEach(k => {
+    const el = $(k);
+    el.addEventListener('focus', e => e.target.select());
+    const fit = () => { const n = el.value.replace(/[^0-9]/g,'').length; el.classList.toggle('vlong', n > 9); el.classList.toggle('long', n > 6 && n <= 9); };
+    el.addEventListener('input', fit);
+    el.addEventListener('blur', () => { let x = parseFloat(el.value.replace(/[,\s원만]/g,'')); if (!isNaN(x)) { if (x >= 100000) { x = x / 10000; toast(`원 단위로 보고 ${won(x)}으로 바꿨어요`); } el.value = x.toLocaleString('ko-KR', {maximumFractionDigits:1}); } fit(); calc(); save(); });
+    fit();
+  });
   const toast = msg => { const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('show'), 1700); };
   $('copy').addEventListener('click', async () => {
     if (!summary) { toast('매출을 먼저 넣어주세요'); return; }
